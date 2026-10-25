@@ -5,3 +5,4 @@ data/degraded/
 results/*
 !results/.gitkeep
 .DS_Store
+.DS_Store
