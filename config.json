@@ -1,0 +1,20 @@
+{
+  "seed": 42,
+  "image_size": 256,
+  "paths": {
+    "original": "data/original",
+    "prepared": "data/prepared",
+    "degraded": "data/degraded",
+    "results": "results"
+  },
+  "degradations": {
+    "gauss_low": {"type": "gaussian", "variance": 100},
+    "gauss_high": {"type": "gaussian", "variance": 900},
+    "impulse": {"type": "impulse", "prob": 0.05},
+    "haze": {"type": "haze", "contrast": 0.5}
+  },
+  "metrics": {
+    "ssim_window": 8,
+    "ssim_step": 4
+  }
+}
