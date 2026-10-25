@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+data/prepared/
+data/degraded/
+results/*
+!results/.gitkeep
