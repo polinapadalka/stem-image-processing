@@ -16,5 +16,8 @@
   "metrics": {
     "ssim_window": 8,
     "ssim_step": 4
+  },
+  "stages": {
+    "bilateral": {"radius": 2, "sigma_space": 2.0, "sigma_range": 60}
   }
 }

@@ -1,12 +1,11 @@
 """Точка входу STEM-проєкту: підготовка вибірки, спотворення, метрики."""
-
 # argparse - стандартна бібліотека для аргументів командного рядка
 import argparse
 import json  # для читання файлу конфігурації
 import os
 import random
 
-from src import degrade, image_io, metrics, results_io
+from src import degrade, image_io, metrics, results_io, stages
 
 
 def load_config(path):
@@ -78,17 +77,48 @@ def command_metrics(config, path_a, path_b):
         print(name.upper(), "=", round(value, 4))
 
 
+def command_stage(config, name, path_in, path_out, path_reference):
+    """Застосовує одну стадію до файлу; якщо є еталон, друкує метрики до і після."""
+    image = image_io.load_image(path_in)
+    if image is None:
+        print("Не вдалося відкрити зображення:", path_in)
+        return
+    try:
+        # параметри стадії беремо з config.json; get повертає {}, якщо розділу немає
+        result = stages.run_stage(name, image, config["stages"].get(name, {}))
+    except ValueError as error:  # невідома назва стадії
+        print(error)
+        return
+    image_io.save_image(result, path_out)
+    print("Збережено:", path_out)
+    if path_reference:  # якщо вказано чисте зображення, рахуємо метрики
+        reference = image_io.load_image(path_reference)
+        if reference is None or reference.size != image.size:
+            print("Еталон не відкрито або його розмір інший: метрики пропущено")
+            return
+        window = config["metrics"]["ssim_window"]
+        step = config["metrics"]["ssim_step"]
+        for label, current in (("до", image), ("після", result)):
+            values = metrics.compare(reference, current, window, step)
+            print(label, {key: round(value, 4) for key, value in values.items()})
+
+
 def main():
     """Розбирає аргументи командного рядка й запускає потрібну команду."""
     parser = argparse.ArgumentParser(description="STEM-проєкт: обробка зображень")
     parser.add_argument("--config", default="config.json", help="шлях до файлу конфігурації")
-    # підкоманди: prepare, degrade, metrics
+    # підкоманди: prepare, degrade, metrics, stage
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("prepare", help="підготувати вибірку зображень")
     subparsers.add_parser("degrade", help="створити спотворені копії")
     metrics_parser = subparsers.add_parser("metrics", help="порахувати метрики для двох файлів")
     metrics_parser.add_argument("image_a")  # перший файл
     metrics_parser.add_argument("image_b")  # другий файл
+    stage_parser = subparsers.add_parser("stage", help="застосувати одну стадію до файлу")
+    stage_parser.add_argument("name", help="назва стадії, наприклад bilateral")
+    stage_parser.add_argument("path_in")  # що обробляємо
+    stage_parser.add_argument("path_out")  # куди зберегти результат
+    stage_parser.add_argument("--reference", default=None, help="чисте зображення для метрик")
     args = parser.parse_args()  # argparse читає те, що написано в командному рядку
 
     try:
@@ -101,6 +131,8 @@ def main():
         command_prepare(config)
     elif args.command == "degrade":
         command_degrade(config)
+    elif args.command == "stage":
+        command_stage(config, args.name, args.path_in, args.path_out, args.reference)
     else:
         command_metrics(config, args.image_a, args.image_b)
 
