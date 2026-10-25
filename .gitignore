@@ -4,3 +4,4 @@ data/prepared/
 data/degraded/
 results/*
 !results/.gitkeep
+.DS_Store
