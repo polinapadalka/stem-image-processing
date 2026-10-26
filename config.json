@@ -19,7 +19,8 @@
   },
   "stages": {
     "bilateral": {"radius": 2, "sigma_space": 2.0, "sigma_range": 60},
-    "wiener": {"radius": 1}
+    "wiener": {"radius": 1},
+    "saturation": {"factor": 1.5}
   },
   "pipelines": {
     "pipeline1": ["bilateral", "equalize", "otsu"]

@@ -44,6 +44,12 @@ class TestStages(unittest.TestCase):
         result = stages.run_stage("wiener", image, {"radius": 1})
         self.assertEqual(result.tobytes(), image.tobytes())
 
+    def test_saturation_stage_changes_color(self):
+        """Стадія saturation підвищує насиченість: (200, 100, 100) стає (200, 50, 50)."""
+        image = Image.new("RGB", (1, 1), (200, 100, 100))
+        result = stages.run_stage("saturation", image, {"factor": 1.5})
+        self.assertEqual(result.getpixel((0, 0)), (200, 50, 50))
+
 
 if __name__ == "__main__":
     unittest.main()
