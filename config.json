@@ -19,5 +19,9 @@
   },
   "stages": {
     "bilateral": {"radius": 2, "sigma_space": 2.0, "sigma_range": 60}
-  }
+  },
+  "pipelines": {
+    "pipeline1": ["bilateral", "equalize", "otsu"]
+  },
+  "save_intermediate": true
 }

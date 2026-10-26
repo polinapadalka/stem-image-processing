@@ -5,7 +5,7 @@ import json  # для читання файлу конфігурації
 import os
 import random
 
-from src import degrade, image_io, metrics, results_io, stages
+from src import degrade, image_io, metrics, pipelines, results_io, stages
 
 
 def load_config(path):
@@ -103,11 +103,68 @@ def command_stage(config, name, path_in, path_out, path_reference):
             print(label, {key: round(value, 4) for key, value in values.items()})
 
 
+def command_run(config, pipeline_name):
+    """Проганяє пайплайн по всіх підготовлених зображеннях і їхніх спотворених копіях."""
+    if pipeline_name not in config["pipelines"]:
+        print("Невідомий пайплайн:", pipeline_name)
+        return
+    stage_names = config["pipelines"][pipeline_name]  # список стадій, наприклад bilateral, ...
+    window = config["metrics"]["ssim_window"]
+    step = config["metrics"]["ssim_step"]
+    out_folder = os.path.join(config["paths"]["results"], pipeline_name)  # куди класти картинки
+    rows = []  # рядки таблиці метрик
+    try:
+        for path in image_io.list_images(config["paths"]["prepared"]):
+            clean = image_io.load_image(path)
+            if clean is None:
+                print("Пропущено:", path)
+                continue
+            name = os.path.splitext(os.path.basename(path))[0]
+            # еталон: ті самі стадії, застосовані до чистого зображення
+            reference_outputs = pipelines.run_chain(clean, stage_names, config["stages"])
+            if config["save_intermediate"]:
+                save_outputs(reference_outputs, stage_names, out_folder, name + "__clean")
+            for key in config["degradations"]:
+                noisy_path = os.path.join(config["paths"]["degraded"], name + "__" + key + ".png")
+                noisy = image_io.load_image(noisy_path)
+                if noisy is None:
+                    print("Немає спотвореної копії (спочатку виконай degrade):", noisy_path)
+                    continue
+                outputs = pipelines.run_chain(noisy, stage_names, config["stages"])
+                if config["save_intermediate"]:
+                    save_outputs(outputs, stage_names, out_folder, name + "__" + key)
+                stage_rows = pipelines.evaluate_chain(
+                    clean, reference_outputs, outputs, stage_names, window, step)
+                for row in stage_rows:
+                    full_row = {"pipeline": pipeline_name, "image": name, "degradation": key}
+                    full_row.update(row)  # додаємо номер стадії та метрики
+                    rows.append(full_row)
+                print(name, key, "SSIM кінцевої стадії =", round(stage_rows[-1]["ssim"], 4))
+    except ValueError as error:  # невідома назва стадії в конфігурації
+        print(error)
+        return
+    if not rows:
+        print("Немає даних: спочатку виконай prepare і degrade")
+        return
+    fields = ["pipeline", "image", "degradation", "stage", "stage_name", "mse", "psnr",
+              "ssim", "psnr_original", "ssim_original", "iou", "dice"]
+    csv_path = os.path.join(config["paths"]["results"], pipeline_name + "_metrics.csv")
+    results_io.write_csv(csv_path, rows, fields)
+    print("Таблицю метрик збережено:", csv_path)
+
+
+def save_outputs(outputs, stage_names, folder, prefix):
+    """Зберігає проміжні результати стадій як prefix__1_назва.png, prefix__2_назва.png..."""
+    for index, image in enumerate(outputs):
+        file_name = prefix + "__" + str(index + 1) + "_" + stage_names[index] + ".png"
+        image_io.save_image(image, os.path.join(folder, file_name))
+
+
 def main():
     """Розбирає аргументи командного рядка й запускає потрібну команду."""
     parser = argparse.ArgumentParser(description="STEM-проєкт: обробка зображень")
     parser.add_argument("--config", default="config.json", help="шлях до файлу конфігурації")
-    # підкоманди: prepare, degrade, metrics, stage
+    # підкоманди: prepare, degrade, metrics, stage, run
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("prepare", help="підготувати вибірку зображень")
     subparsers.add_parser("degrade", help="створити спотворені копії")
@@ -119,6 +176,8 @@ def main():
     stage_parser.add_argument("path_in")  # що обробляємо
     stage_parser.add_argument("path_out")  # куди зберегти результат
     stage_parser.add_argument("--reference", default=None, help="чисте зображення для метрик")
+    run_parser = subparsers.add_parser("run", help="запустити пайплайн на всій вибірці")
+    run_parser.add_argument("pipeline", help="назва пайплайна з config.json")
     args = parser.parse_args()  # argparse читає те, що написано в командному рядку
 
     try:
@@ -131,6 +190,8 @@ def main():
         command_prepare(config)
     elif args.command == "degrade":
         command_degrade(config)
+    elif args.command == "run":
+        command_run(config, args.pipeline)
     elif args.command == "stage":
         command_stage(config, args.name, args.path_in, args.path_out, args.reference)
     else:
