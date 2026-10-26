@@ -24,6 +24,11 @@ class TestStages(unittest.TestCase):
         self.assertEqual(result.size, (4, 4))
         self.assertEqual(result.tobytes(), image.tobytes())
 
+    def test_equalize_stage_keeps_size(self):
+        """Стадія equalize повертає зображення того самого розміру."""
+        image = Image.new("RGB", (3, 3), (50, 60, 70))
+        self.assertEqual(stages.run_stage("equalize", image, {}).size, (3, 3))
+
 
 if __name__ == "__main__":
     unittest.main()
