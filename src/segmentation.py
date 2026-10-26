@@ -1,5 +1,5 @@
-"""Сегментація: поділ зображення на об'єкт і фон за порогом Оцу (стадія 3 пайплайна 1)."""
-from src import histogram
+"""Сегментація: поділ зображення на об'єкт і фон (стадії 3 пайплайнів 1 і 2)."""
+from src import color, histogram
 
 
 def otsu_threshold(image):
@@ -47,5 +47,21 @@ def otsu_segmentation(image):
             if levels[y][x] > threshold:  # світліше за поріг: об'єкт
                 pixels[x, y] = (255, 255, 255)
             else:  # не світліше за поріг: фон
+                pixels[x, y] = (0, 0, 0)
+    return result
+
+
+def color_segmentation(image, hue_min, hue_max, sat_min, val_min):
+    result = image.copy()
+    pixels = result.load()
+    width, height = result.size
+    for x in range(width):
+        for y in range(height):
+            r, g, b = pixels[x, y]
+            hue, saturation, value = color.rgb_to_hsv(r, g, b)
+            inside = hue_min <= hue <= hue_max and saturation >= sat_min and value >= val_min
+            if inside:  # потрібний колір: об'єкт
+                pixels[x, y] = (255, 255, 255)
+            else:  # решта: фон
                 pixels[x, y] = (0, 0, 0)
     return result

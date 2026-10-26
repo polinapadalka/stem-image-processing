@@ -15,5 +15,8 @@ def run_stage(name, image, params):
         return color.saturation_boost(image, params["factor"])
     if name == "otsu":
         return segmentation.otsu_segmentation(image)  # поріг обирається автоматично
+    if name == "color_segment":
+        return segmentation.color_segmentation(
+            image, params["hue_min"], params["hue_max"], params["sat_min"], params["val_min"])
     # сюди додаватимемо нові стадії
     raise ValueError("Невідома стадія: " + str(name))

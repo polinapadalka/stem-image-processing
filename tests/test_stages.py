@@ -50,6 +50,16 @@ class TestStages(unittest.TestCase):
         result = stages.run_stage("saturation", image, {"factor": 1.5})
         self.assertEqual(result.getpixel((0, 0)), (200, 50, 50))
 
+    def test_color_segment_stage_makes_mask(self):
+        """Стадія color_segment: зелений піксель стає білим, червоний чорним."""
+        params = {"hue_min": 60, "hue_max": 170, "sat_min": 0.15, "val_min": 0.10}
+        image = Image.new("RGB", (2, 1))
+        image.putpixel((0, 0), (0, 200, 0))
+        image.putpixel((1, 0), (200, 0, 0))
+        result = stages.run_stage("color_segment", image, params)
+        self.assertEqual([result.getpixel((0, 0)), result.getpixel((1, 0))],
+                         [(255, 255, 255), (0, 0, 0)])
+
 
 if __name__ == "__main__":
     unittest.main()

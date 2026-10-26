@@ -20,7 +20,8 @@
   "stages": {
     "bilateral": {"radius": 2, "sigma_space": 2.0, "sigma_range": 60},
     "wiener": {"radius": 1},
-    "saturation": {"factor": 1.5}
+    "saturation": {"factor": 1.5},
+    "color_segment": {"hue_min": 60, "hue_max": 170, "sat_min": 0.15, "val_min": 0.1}
   },
   "pipelines": {
     "pipeline1": ["bilateral", "equalize", "otsu"]
