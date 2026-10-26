@@ -29,6 +29,15 @@ class TestStages(unittest.TestCase):
         image = Image.new("RGB", (3, 3), (50, 60, 70))
         self.assertEqual(stages.run_stage("equalize", image, {}).size, (3, 3))
 
+    def test_otsu_stage_gives_black_and_white(self):
+        """Стадія otsu повертає лише чорні й білі пікселі."""
+        image = Image.new("RGB", (2, 1))
+        image.putpixel((0, 0), (30, 30, 30))
+        image.putpixel((1, 0), (220, 220, 220))
+        result = stages.run_stage("otsu", image, {})
+        self.assertEqual([result.getpixel((0, 0)), result.getpixel((1, 0))],
+                         [(0, 0, 0), (255, 255, 255)])
+
 
 if __name__ == "__main__":
     unittest.main()

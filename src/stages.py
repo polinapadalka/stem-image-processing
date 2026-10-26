@@ -1,5 +1,5 @@
 """Запуск стадій за назвою: єдине місце, де стадії з'єднано з параметрами з конфігурації."""
-from src import filtering, histogram
+from src import filtering, histogram, segmentation
 
 
 def run_stage(name, image, params):
@@ -9,5 +9,7 @@ def run_stage(name, image, params):
             image, params["radius"], params["sigma_space"], params["sigma_range"])
     if name == "equalize":
         return histogram.equalize_histogram(image)  # параметрів у цієї стадії немає
+    if name == "otsu":
+        return segmentation.otsu_segmentation(image)  # поріг обирається автоматично
     # сюди додаватимемо нові стадії
     raise ValueError("Невідома стадія: " + str(name))
