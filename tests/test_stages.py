@@ -38,6 +38,12 @@ class TestStages(unittest.TestCase):
         self.assertEqual([result.getpixel((0, 0)), result.getpixel((1, 0))],
                          [(0, 0, 0), (255, 255, 255)])
 
+    def test_wiener_stage_keeps_flat_image(self):
+        """Стадія wiener не змінює однотонне зображення."""
+        image = Image.new("RGB", (4, 4), (70, 80, 90))
+        result = stages.run_stage("wiener", image, {"radius": 1})
+        self.assertEqual(result.tobytes(), image.tobytes())
+
 
 if __name__ == "__main__":
     unittest.main()

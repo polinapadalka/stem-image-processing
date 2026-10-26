@@ -1,5 +1,5 @@
 """Запуск стадій за назвою: єдине місце, де стадії з'єднано з параметрами з конфігурації."""
-from src import filtering, histogram, segmentation
+from src import adaptive_filter, filtering, histogram, segmentation
 
 
 def run_stage(name, image, params):
@@ -7,6 +7,8 @@ def run_stage(name, image, params):
     if name == "bilateral":
         return filtering.bilateral_filter(
             image, params["radius"], params["sigma_space"], params["sigma_range"])
+    if name == "wiener":
+        return adaptive_filter.wiener_filter(image, params["radius"])
     if name == "equalize":
         return histogram.equalize_histogram(image)  # параметрів у цієї стадії немає
     if name == "otsu":
