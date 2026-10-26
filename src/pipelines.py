@@ -2,7 +2,7 @@
 from src import mask_metrics, metrics, stages
 
 # стадії, які повертають чорно-білу маску: для них додатково рахуємо IoU і Дайса
-MASK_STAGES = ("otsu",)
+MASK_STAGES = ("otsu", "color_segment")
 
 
 def run_chain(image, stage_names, stage_params):
@@ -18,7 +18,7 @@ def run_chain(image, stage_names, stage_params):
 
 def evaluate_chain(clean, reference_outputs, outputs, stage_names, window, step):
     """Порівнює результати кожної стадії з еталонними й повертає рядки таблиці метрик.
-    reference_outputs - результати тих самих стадій на чистому зображенні,
+    reference_outputs - результати тих самих стадій на чистому зображенні (еталон стадії),
     outputs - результати на спотвореному зображенні, clean - чисте початкове зображення.
     """
     rows = []
