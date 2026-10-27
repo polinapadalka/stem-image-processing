@@ -14,3 +14,4 @@ results/*
 !results/by_class.csv
 !results/paired_comparisons.csv
 !results/analyze_output.txt
+venv/
