@@ -1,8 +1,13 @@
 __pycache__/
 *.pyc
+.DS_Store
 data/prepared/
 data/degraded/
 results/*
 !results/.gitkeep
-.DS_Store
-.DS_Store
+!results/comparison.csv
+!results/comparison_before_tuning.csv
+!results/pipeline1_metrics.csv
+!results/pipeline2_metrics.csv
+!results/pipeline2m_metrics.csv
+!results/compare_output.txt

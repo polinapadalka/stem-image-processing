@@ -1,0 +1,30 @@
+
+Стадія 1: середні PSNR і SSIM відносно чистого оригіналу
+pipeline1  gauss_high  n = 100 PSNR 25.863 SSIM 0.778
+pipeline1  gauss_low   n = 100 PSNR 31.184 SSIM 0.885
+pipeline1  haze        n = 100 PSNR 20.975 SSIM 0.643
+pipeline1  impulse     n = 100 PSNR 18.34 SSIM 0.407
+pipeline2  gauss_high  n = 100 PSNR 25.124 SSIM 0.767
+pipeline2  gauss_low   n = 100 PSNR 31.456 SSIM 0.913
+pipeline2  haze        n = 100 PSNR 21.573 SSIM 0.733
+pipeline2  impulse     n = 100 PSNR 20.674 SSIM 0.522
+pipeline2m gauss_high  n = 100 PSNR 25.124 SSIM 0.767
+pipeline2m gauss_low   n = 100 PSNR 31.456 SSIM 0.913
+pipeline2m haze        n = 100 PSNR 21.573 SSIM 0.733
+pipeline2m impulse     n = 100 PSNR 20.674 SSIM 0.522
+
+Кінцева стадія (маска): середні IoU і Дайс відносно маски чистого знімка
+pipeline1  gauss_high  n = 100 IoU 0.829 +- 0.085 Dice 0.904
+pipeline1  gauss_low   n = 100 IoU 0.947 +- 0.031 Dice 0.973
+pipeline1  haze        n = 100 IoU 0.947 +- 0.033 Dice 0.973
+pipeline1  impulse     n = 100 IoU 0.939 +- 0.01 Dice 0.968
+pipeline2  gauss_high  n = 100 IoU 0.326 +- 0.19 Dice 0.46
+pipeline2  gauss_low   n = 100 IoU 0.507 +- 0.235 Dice 0.636
+pipeline2  haze        n = 100 IoU 0.476 +- 0.333 Dice 0.566
+pipeline2  impulse     n = 100 IoU 0.834 +- 0.154 Dice 0.899
+pipeline2m gauss_high  n = 100 IoU 0.278 +- 0.162 Dice 0.411
+pipeline2m gauss_low   n = 100 IoU 0.552 +- 0.233 Dice 0.676
+pipeline2m haze        n = 100 IoU 0.489 +- 0.346 Dice 0.573
+pipeline2m impulse     n = 100 IoU 0.864 +- 0.119 Dice 0.922
+
+Таблицю порівняння збережено: results/comparison.csv
