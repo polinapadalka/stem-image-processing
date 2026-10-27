@@ -52,6 +52,7 @@ def otsu_segmentation(image):
 
 
 def color_segmentation(image, hue_min, hue_max, sat_min, val_min):
+    """Колірна сегментація: білі пікселі із заданим відтінком, насиченістю й яскравістю."""
     result = image.copy()
     pixels = result.load()
     width, height = result.size

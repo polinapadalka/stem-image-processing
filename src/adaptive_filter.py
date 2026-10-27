@@ -31,7 +31,7 @@ def local_statistics(pixels, width, height, channel, radius):
 
 
 def wiener_filter(image, radius):
-    
+    """Адаптивний фільтр Вінера: g = m + (D - N) / D * (f - m), якщо D > N, інакше g = m."""
     pixels = image.load()
     width, height = image.size
     result = image.copy()

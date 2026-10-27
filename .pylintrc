@@ -1,0 +1,23 @@
+[BASIC]
+# короткі імена x, y, c, r, g, b, dx, dy загальноприйняті в обробці зображень
+good-names=i,j,k,x,y,c,r,g,b,dx,dy,ex,_
+
+[DESIGN]
+# у чисельних алгоритмах багато проміжних змінних, параметрів і розгалужень
+max-locals=35
+max-args=8
+max-positional-arguments=8
+max-statements=80
+max-branches=20
+max-returns=10
+max-nested-blocks=7
+
+[SIMILARITIES]
+# однакові "заголовки" циклів по пікселях не вважаємо копіюванням логіки
+min-similarity-lines=12
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+
+[FORMAT]
+max-line-length=100
