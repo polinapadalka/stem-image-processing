@@ -11,3 +11,6 @@ results/*
 !results/pipeline2_metrics.csv
 !results/pipeline2m_metrics.csv
 !results/compare_output.txt
+!results/by_class.csv
+!results/paired_comparisons.csv
+!results/analyze_output.txt

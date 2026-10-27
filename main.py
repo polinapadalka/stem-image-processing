@@ -5,7 +5,8 @@ import json  # для читання файлу конфігурації
 import os
 import random
 
-from src import analysis, degrade, image_io, metrics, pipelines, results_io, stages
+from src import (analysis, comparison, degrade, image_io, metrics, pipelines,
+                 results_io, stages)
 
 
 def load_config(path):
@@ -202,11 +203,92 @@ def command_compare(config):
     print("\nТаблицю порівняння збережено:", csv_path)
 
 
+def signed(value):
+    """Число із знаком для виводу: +0.123 або -0.045."""
+    sign = "+" if value >= 0 else ""
+    return sign + str(round(value, 3))
+
+
+def load_all_rows(config):
+    """Читає таблиці метрик усіх пайплайнів, для яких вже є результати."""
+    rows = []
+    for name in config["pipelines"]:
+        path = os.path.join(config["paths"]["results"], name + "_metrics.csv")
+        if os.path.exists(path):
+            rows.extend(analysis.read_rows(path))
+    return rows
+
+
+def command_analyze(config):
+    """Порівняння за класами знімків і парне порівняння пайплайнів."""
+    rows = load_all_rows(config)
+    if not rows:
+        print("Немає даних: спочатку виконай run для пайплайнів")
+        return
+    names = []  # пайплайни, для яких є результати
+    last = {}  # номер кінцевої стадії кожного пайплайна
+    for name in config["pipelines"]:
+        if comparison.select(rows, name, 1):
+            names.append(name)
+            last[name] = len(config["pipelines"][name])
+
+    # 1. середній IoU маски за класами: повна таблиця в CSV і стисла на екрані
+    class_rows = []
+    table = {}  # клас -> {пайплайн: середній IoU по всіх спотвореннях}
+    for name in names:
+        for key in config["degradations"]:
+            result = comparison.by_class(rows, name, last[name], "iou", key)
+            for class_, (mean, count) in result.items():
+                class_rows.append({"pipeline": name, "class": class_, "degradation": key,
+                                   "iou_mean": mean, "n": count})
+        for class_, (mean, _) in comparison.by_class(rows, name, last[name], "iou").items():
+            if class_ not in table:
+                table[class_] = {}
+            table[class_][name] = mean
+    results_io.write_csv(os.path.join(config["paths"]["results"], "by_class.csv"), class_rows,
+                         ["pipeline", "class", "degradation", "iou_mean", "n"])
+    print("\nСередній IoU маски за класами (усі спотворення разом)")
+    print("клас".ljust(20), "  ".join(name.rjust(10) for name in names))
+    for class_ in sorted(table):
+        values = [show(table[class_].get(name)).rjust(10) for name in names]
+        print(class_.ljust(20), "  ".join(values))
+
+    # 2. парне порівняння по однакових знімках (різниця b - a, додатна означає, що b краще)
+    pairs = [("pipeline1", "pipeline2", "final", "iou"),
+             ("pipeline2", "pipeline2m", "final", "iou"),
+             ("pipeline1", "pipeline2", 1, "psnr_original"),
+             ("pipeline1", "pipeline2", 1, "ssim_original")]
+    paired_rows = []
+    for name_a, name_b, which, field in pairs:
+        if name_a not in names or name_b not in names:
+            continue
+        stage_a = last[name_a] if which == "final" else which
+        stage_b = last[name_b] if which == "final" else which
+        print("\n" + name_b, "проти", name_a + ":", field, "(стадія", str(stage_b) + ")")
+        print("  різниця b - a, 95 % інтервал, частка знімків, де b краще")
+        for key in config["degradations"]:
+            result = comparison.paired(comparison.select(rows, name_a, stage_a, key),
+                                       comparison.select(rows, name_b, stage_b, key), field)
+            if result is None:
+                continue
+            print("  ", key.ljust(11), signed(result["mean"]),
+                  "[" + signed(result["low"]) + "; " + signed(result["high"]) + "]",
+                  "краще в", str(round(result["wins"] * 100)) + " %", "n =", result["n"])
+            paired_rows.append({"a": name_a, "b": name_b, "field": field, "stage_a": stage_a,
+                                "stage_b": stage_b, "degradation": key, "n": result["n"],
+                                "mean": result["mean"], "low": result["low"],
+                                "high": result["high"], "wins": result["wins"]})
+    results_io.write_csv(os.path.join(config["paths"]["results"], "paired_comparisons.csv"),
+                         paired_rows, ["a", "b", "field", "stage_a", "stage_b", "degradation",
+                                       "n", "mean", "low", "high", "wins"])
+    print("\nТаблиці збережено: results/by_class.csv, results/paired_comparisons.csv")
+
+
 def main():
     """Розбирає аргументи командного рядка й запускає потрібну команду."""
     parser = argparse.ArgumentParser(description="STEM-проєкт: обробка зображень")
     parser.add_argument("--config", default="config.json", help="шлях до файлу конфігурації")
-    # підкоманди: prepare, degrade, metrics, stage, run, compare
+    # підкоманди: prepare, degrade, metrics, stage, run, compare, analyze
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("prepare", help="підготувати вибірку зображень")
     subparsers.add_parser("degrade", help="створити спотворені копії")
@@ -221,6 +303,7 @@ def main():
     run_parser = subparsers.add_parser("run", help="запустити пайплайн на всій вибірці")
     run_parser.add_argument("pipeline", help="назва пайплайна з config.json")
     subparsers.add_parser("compare", help="порівняти пайплайни за збереженими метриками")
+    subparsers.add_parser("analyze", help="порівняння за класами й парне порівняння")
     args = parser.parse_args()  # argparse читає те, що написано в командному рядку
 
     try:
@@ -237,6 +320,8 @@ def main():
         command_run(config, args.pipeline)
     elif args.command == "compare":
         command_compare(config)
+    elif args.command == "analyze":
+        command_analyze(config)
     elif args.command == "stage":
         command_stage(config, args.name, args.path_in, args.path_out, args.reference)
     else:
