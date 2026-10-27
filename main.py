@@ -5,7 +5,7 @@ import json  # для читання файлу конфігурації
 import os
 import random
 
-from src import degrade, image_io, metrics, pipelines, results_io, stages
+from src import analysis, degrade, image_io, metrics, pipelines, results_io, stages
 
 
 def load_config(path):
@@ -160,11 +160,53 @@ def save_outputs(outputs, stage_names, folder, prefix):
         image_io.save_image(image, os.path.join(folder, file_name))
 
 
+def show(value):
+    """Готує число до виводу: округлює до трьох знаків, а відсутнє значення замінює рискою."""
+    if value is None:
+        return "-"
+    return str(round(value, 3))
+
+
+def command_compare(config):
+    """Збирає таблиці всіх пайплайнів, рахує середні метрики й порівнює пайплайни."""
+    rows = []  # усі рядки з таблиць metrics усіх пайплайнів
+    for name in config["pipelines"]:
+        path = os.path.join(config["paths"]["results"], name + "_metrics.csv")
+        if os.path.exists(path):
+            rows.extend(analysis.read_rows(path))
+        else:
+            print("Немає таблиці (спочатку виконай run):", path)
+    if not rows:
+        print("Немає даних для порівняння")
+        return
+    summary = analysis.summarize(rows)  # середні значення за пайплайном, спотворенням і стадією
+    fields = ["pipeline", "degradation", "stage", "stage_name", "n"]
+    for field in analysis.NUMBER_FIELDS:
+        fields.append(field + "_mean")
+        fields.append(field + "_std")
+    csv_path = os.path.join(config["paths"]["results"], "comparison.csv")
+    results_io.write_csv(csv_path, summary, fields)
+
+    print("\nСтадія 1: середні PSNR і SSIM відносно чистого оригіналу")
+    for item in summary:
+        if item["stage"] == 1:
+            print(item["pipeline"].ljust(10), item["degradation"].ljust(11), "n =", item["n"],
+                  "PSNR", show(item["psnr_original_mean"]),
+                  "SSIM", show(item["ssim_original_mean"]))
+    print("\nКінцева стадія (маска): середні IoU і Дайс відносно маски чистого знімка")
+    for item in summary:
+        if item["stage"] == len(config["pipelines"][item["pipeline"]]):  # остання стадія
+            print(item["pipeline"].ljust(10), item["degradation"].ljust(11), "n =", item["n"],
+                  "IoU", show(item["iou_mean"]), "+-", show(item["iou_std"]),
+                  "Dice", show(item["dice_mean"]))
+    print("\nТаблицю порівняння збережено:", csv_path)
+
+
 def main():
     """Розбирає аргументи командного рядка й запускає потрібну команду."""
     parser = argparse.ArgumentParser(description="STEM-проєкт: обробка зображень")
     parser.add_argument("--config", default="config.json", help="шлях до файлу конфігурації")
-    # підкоманди: prepare, degrade, metrics, stage, run
+    # підкоманди: prepare, degrade, metrics, stage, run, compare
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("prepare", help="підготувати вибірку зображень")
     subparsers.add_parser("degrade", help="створити спотворені копії")
@@ -178,6 +220,7 @@ def main():
     stage_parser.add_argument("--reference", default=None, help="чисте зображення для метрик")
     run_parser = subparsers.add_parser("run", help="запустити пайплайн на всій вибірці")
     run_parser.add_argument("pipeline", help="назва пайплайна з config.json")
+    subparsers.add_parser("compare", help="порівняти пайплайни за збереженими метриками")
     args = parser.parse_args()  # argparse читає те, що написано в командному рядку
 
     try:
@@ -192,6 +235,8 @@ def main():
         command_degrade(config)
     elif args.command == "run":
         command_run(config, args.pipeline)
+    elif args.command == "compare":
+        command_compare(config)
     elif args.command == "stage":
         command_stage(config, args.name, args.path_in, args.path_out, args.reference)
     else:
