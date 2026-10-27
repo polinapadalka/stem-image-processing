@@ -5,8 +5,8 @@ import json  # для читання файлу конфігурації
 import os
 import random
 
-from src import (analysis, comparison, degrade, image_io, metrics, pipelines,
-                 results_io, stages)
+from src import (analysis, checks, comparison, degrade, image_io, metrics,
+                 pipelines, results_io, stages)
 
 
 def load_config(path):
@@ -284,11 +284,35 @@ def command_analyze(config):
     print("\nТаблиці збережено: results/by_class.csv, results/paired_comparisons.csv")
 
 
+def command_check(config):
+    """Перевіряє еталонні сценарії з config.json за збереженими таблицями метрик."""
+    rows = load_all_rows(config)
+    path = os.path.join(config["paths"]["results"], "degradation_metrics.csv")
+    if not rows or not os.path.exists(path):
+        print("Немає даних: виконай degrade та run для пайплайнів")
+        return
+    last_stage = {}  # номер кінцевої стадії кожного пайплайна
+    for name, stage_names in config["pipelines"].items():
+        last_stage[name] = len(stage_names)
+    cases = checks.run_scenarios(rows, checks.read_degraded(path), config["scenarios"],
+                                 last_stage, list(config["degradations"]))
+    results_io.write_csv(os.path.join(config["paths"]["results"], "scenarios_check.csv"), cases,
+                         ["id", "pipeline", "degradation", "value", "required", "ok", "note"])
+    print("Перевірка еталонних сценаріїв (значення, потрібний поріг)")
+    for case in cases:
+        verdict = "ПРОЙДЕНО" if case["ok"] else "НЕ ПРОЙДЕНО"
+        print("сценарій", case["id"], case["pipeline"].ljust(10), case["degradation"].ljust(11),
+              show(case["value"]).rjust(6), "поріг", str(case["required"]).rjust(5), verdict)
+    passed, total = checks.count_passed(cases)
+    print("\nПройдено тест-кейсів:", passed, "із", total, "(" + str(round(100 * passed / total))
+          + " %)")
+
+
 def main():
     """Розбирає аргументи командного рядка й запускає потрібну команду."""
     parser = argparse.ArgumentParser(description="STEM-проєкт: обробка зображень")
     parser.add_argument("--config", default="config.json", help="шлях до файлу конфігурації")
-    # підкоманди: prepare, degrade, metrics, stage, run, compare, analyze
+    # підкоманди: prepare, degrade, metrics, stage, run, compare, analyze, check
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("prepare", help="підготувати вибірку зображень")
     subparsers.add_parser("degrade", help="створити спотворені копії")
@@ -304,6 +328,7 @@ def main():
     run_parser.add_argument("pipeline", help="назва пайплайна з config.json")
     subparsers.add_parser("compare", help="порівняти пайплайни за збереженими метриками")
     subparsers.add_parser("analyze", help="порівняння за класами й парне порівняння")
+    subparsers.add_parser("check", help="перевірити еталонні сценарії й пороги")
     args = parser.parse_args()  # argparse читає те, що написано в командному рядку
 
     try:
@@ -322,6 +347,8 @@ def main():
         command_compare(config)
     elif args.command == "analyze":
         command_analyze(config)
+    elif args.command == "check":
+        command_check(config)
     elif args.command == "stage":
         command_stage(config, args.name, args.path_in, args.path_out, args.reference)
     else:

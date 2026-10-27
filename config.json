@@ -29,5 +29,16 @@
     "pipeline2": ["wiener", "saturation", "color_segment"],
     "pipeline2m": ["wiener", "saturation", "color_segment", "morphology"]
   },
+  "scenarios": [
+    {"id": 1, "kind": "gain", "pipelines": ["pipeline1", "pipeline2"], "degradation": "gauss_low",
+     "min_gain": 1.0, "min_share": 0.9},
+    {"id": 2, "kind": "gain", "pipelines": ["pipeline1", "pipeline2"], "degradation": "gauss_high",
+     "min_gain": 3.0, "min_share": 0.9},
+    {"id": 3, "kind": "gain", "pipelines": ["pipeline2"], "degradation": "impulse",
+     "min_gain": 0.0, "min_share": 0.9},
+    {"id": 4, "kind": "mean", "pipelines": ["pipeline1"], "field": "iou", "min_mean": 0.8},
+    {"id": 5, "kind": "mean", "pipelines": ["pipeline2", "pipeline2m"], "field": "iou",
+     "min_mean": 0.25}
+  ],
   "save_intermediate": true
 }
