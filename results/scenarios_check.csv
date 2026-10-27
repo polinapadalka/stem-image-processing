@@ -1,0 +1,18 @@
+id,pipeline,degradation,value,required,ok,note
+1,pipeline1,gauss_low,0.85,0.9,False,частка знімків із приростом PSNR не менше 1.0 дБ
+1,pipeline2,gauss_low,0.87,0.9,False,частка знімків із приростом PSNR не менше 1.0 дБ
+2,pipeline1,gauss_high,1.0,0.9,True,частка знімків із приростом PSNR не менше 3.0 дБ
+2,pipeline2,gauss_high,0.98,0.9,True,частка знімків із приростом PSNR не менше 3.0 дБ
+3,pipeline2,impulse,1.0,0.9,True,частка знімків із приростом PSNR не менше 0.0 дБ
+4,pipeline1,gauss_low,0.9474872983704594,0.8,True,середнє значення iou
+4,pipeline1,gauss_high,0.8293194242412106,0.8,True,середнє значення iou
+4,pipeline1,impulse,0.9389539593026714,0.8,True,середнє значення iou
+4,pipeline1,haze,0.947350258391531,0.8,True,середнє значення iou
+5,pipeline2,gauss_low,0.5067083937380852,0.25,True,середнє значення iou
+5,pipeline2,gauss_high,0.3261772486837545,0.25,True,середнє значення iou
+5,pipeline2,impulse,0.8339844243694857,0.25,True,середнє значення iou
+5,pipeline2,haze,0.4756877085561044,0.25,True,середнє значення iou
+5,pipeline2m,gauss_low,0.5515563329431195,0.25,True,середнє значення iou
+5,pipeline2m,gauss_high,0.27829104202145233,0.25,True,середнє значення iou
+5,pipeline2m,impulse,0.8643005160885642,0.25,True,середнє значення iou
+5,pipeline2m,haze,0.4893863288812851,0.25,True,середнє значення iou
