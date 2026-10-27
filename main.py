@@ -6,7 +6,7 @@ import os
 import random
 
 from src import (analysis, checks, comparison, degrade, image_io, metrics,
-                 pipelines, results_io, stages)
+                 pipelines, plots, results_io, stages)
 
 
 def load_config(path):
@@ -308,11 +308,20 @@ def command_check(config):
           + " %)")
 
 
+def command_plots(config):
+    """Створює графіки для звіту за збереженими таблицями метрик."""
+    rows = load_all_rows(config)
+    if not rows:
+        print("Немає даних: спочатку виконай run для пайплайнів")
+        return
+    plots.make_all(config, rows)
+
+
 def main():
     """Розбирає аргументи командного рядка й запускає потрібну команду."""
     parser = argparse.ArgumentParser(description="STEM-проєкт: обробка зображень")
     parser.add_argument("--config", default="config.json", help="шлях до файлу конфігурації")
-    # підкоманди: prepare, degrade, metrics, stage, run, compare, analyze, check
+    # підкоманди: prepare, degrade, metrics, stage, run, compare, analyze, check, plots
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("prepare", help="підготувати вибірку зображень")
     subparsers.add_parser("degrade", help="створити спотворені копії")
@@ -329,6 +338,7 @@ def main():
     subparsers.add_parser("compare", help="порівняти пайплайни за збереженими метриками")
     subparsers.add_parser("analyze", help="порівняння за класами й парне порівняння")
     subparsers.add_parser("check", help="перевірити еталонні сценарії й пороги")
+    subparsers.add_parser("plots", help="створити графіки для звіту")
     args = parser.parse_args()  # argparse читає те, що написано в командному рядку
 
     try:
@@ -349,6 +359,8 @@ def main():
         command_analyze(config)
     elif args.command == "check":
         command_check(config)
+    elif args.command == "plots":
+        command_plots(config)
     elif args.command == "stage":
         command_stage(config, args.name, args.path_in, args.path_out, args.reference)
     else:
