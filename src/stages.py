@@ -1,5 +1,5 @@
 """Запуск стадій за назвою: єдине місце, де стадії з'єднано з параметрами з конфігурації."""
-from src import adaptive_filter, color, filtering, histogram, segmentation
+from src import adaptive_filter, color, filtering, histogram, morphology, segmentation
 
 
 def run_stage(name, image, params):
@@ -18,5 +18,7 @@ def run_stage(name, image, params):
     if name == "color_segment":
         return segmentation.color_segmentation(
             image, params["hue_min"], params["hue_max"], params["sat_min"], params["val_min"])
+    if name == "morphology":
+        return morphology.clean_mask(image, params["radius"])
     # сюди додаватимемо нові стадії
     raise ValueError("Невідома стадія: " + str(name))

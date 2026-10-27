@@ -9,12 +9,14 @@ from src import pipelines
 # назви стадій пайплайнів
 PIPELINE_1 = ["bilateral", "equalize", "otsu"]
 PIPELINE_2 = ["wiener", "saturation", "color_segment"]
+PIPELINE_2M = PIPELINE_2 + ["morphology"]  # пайплайн 2 з очищенням маски
 # параметри стадій для тестів
 PARAMS = {
     "bilateral": {"radius": 1, "sigma_space": 1.0, "sigma_range": 10},
     "wiener": {"radius": 1},
     "saturation": {"factor": 1.5},
     "color_segment": {"hue_min": 60, "hue_max": 170, "sat_min": 0.15, "val_min": 0.10},
+    "morphology": {"radius": 1},
 }
 
 
@@ -81,6 +83,16 @@ class TestPipeline2(unittest.TestCase):
         self.assertEqual(row, [(0, 200, 0), (33, 167, 0), (167, 33, 0), (200, 0, 0)])
         mask = [outputs[2].getpixel((x, 1)) for x in range(4)]
         self.assertEqual(mask, [(255, 255, 255)] * 2 + [(0, 0, 0)] * 2)
+
+
+class TestPipeline2M(unittest.TestCase):
+    """Пайплайн 2 з морфологією: wiener -> saturation -> color_segment -> morphology."""
+
+    def test_morphology_keeps_clean_block_mask(self):
+        """Маска з двох суцільних половин не змінюється очищенням."""
+        outputs = pipelines.run_chain(green_red_image(), PIPELINE_2M, PARAMS)
+        self.assertEqual(len(outputs), 4)
+        self.assertEqual(outputs[3].tobytes(), outputs[2].tobytes())
 
 
 class TestEvaluate(unittest.TestCase):

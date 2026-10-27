@@ -60,6 +60,13 @@ class TestStages(unittest.TestCase):
         self.assertEqual([result.getpixel((0, 0)), result.getpixel((1, 0))],
                          [(255, 255, 255), (0, 0, 0)])
 
+    def test_morphology_stage_removes_speck(self):
+        """Стадія morphology прибирає окремий білий піксель."""
+        image = Image.new("RGB", (5, 5), (0, 0, 0))
+        image.putpixel((2, 2), (255, 255, 255))
+        result = stages.run_stage("morphology", image, {"radius": 1})
+        self.assertEqual(result.getpixel((2, 2)), (0, 0, 0))
+
 
 if __name__ == "__main__":
     unittest.main()

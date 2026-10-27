@@ -2,7 +2,7 @@
 from src import mask_metrics, metrics, stages
 
 # стадії, які повертають чорно-білу маску: для них додатково рахуємо IoU і Дайса
-MASK_STAGES = ("otsu", "color_segment")
+MASK_STAGES = ("otsu", "color_segment", "morphology")
 
 
 def run_chain(image, stage_names, stage_params):
